@@ -15,7 +15,7 @@ jobs:
               cat cylonresponse.json 
  
 workflows:
-  Get_cylon_response:
+  Cylon API Response:
     jobs:
       - cylonAPI
       
