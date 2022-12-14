@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -49,10 +50,10 @@ type Image struct {
 }
 
 type Output struct {
-	imageTagFound string
-	matchFound    bool
-	projectId     string
-	projectName   string
+	ImageTagFound string `json:"imageTagFound"`
+	MatchFound    bool   `json:"matchFound"`
+	ProjectId     string `json:"projectId"`
+	ProjectName   string `json:"projectName"`
 }
 
 // Arguements that are needed to pass:
@@ -102,35 +103,36 @@ func validator(token, projectId, imageId, environment string) {
 		printErr("error occured in unmarshalling the response (" + err.Error() + ")")
 		return
 	}
-	output := new(Output)
-	output.projectId = projectId
-	output.projectName = object.ProjectName
+	log.Println(object)
+	output := Output{}
+	output.ProjectId = projectId
+	output.ProjectName = object.ProjectName
 
 	if strings.EqualFold(environment, production) {
-		output.imageTagFound = object.Production.Values.Image.Tag
+		output.ImageTagFound = object.Production.Values.Image.Tag
 	}
 	if strings.EqualFold(environment, development) {
-		output.imageTagFound = object.Development.Values.Image.Tag
+		output.ImageTagFound = object.Development.Values.Image.Tag
 	}
 	if strings.EqualFold(environment, performace) {
-		output.imageTagFound = object.Performance.Values.Image.Tag
+		output.ImageTagFound = object.Performance.Values.Image.Tag
 	}
 	if strings.EqualFold(environment, testinG) {
-		output.imageTagFound = object.Testing.Values.Image.Tag
+		output.ImageTagFound = object.Testing.Values.Image.Tag
 	}
 	if strings.EqualFold(environment, staging) {
-		output.imageTagFound = object.Staging.Values.Image.Tag
+		output.ImageTagFound = object.Staging.Values.Image.Tag
 	}
 
-	output.matchFound = output.imageTagFound == imageId
+	output.MatchFound = output.ImageTagFound == imageId
 
-	bytes, err = json.MarshalIndent(output, " ", "\t")
+	bytesOutput, err := json.MarshalIndent(output, " ", "\t")
 	if err != nil {
 		printErr("error occured in marshalling the output (" + err.Error() + ")")
 		return
 	}
 
-	fmt.Print(string(bytes))
+	fmt.Print(string(bytesOutput))
 	return
 }
 
