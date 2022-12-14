@@ -65,12 +65,28 @@ type Output struct {
 // 3 - ImageId
 // 4 - environment
 
+var possibleEnvs = []string{production, staging, testinG, development}
+
 func main() {
 	if len(os.Args) < 5 {
 		printErr("not enough arguements to make the call")
 		return
 	}
-	validator(new(http.Client), os.Args[1], os.Args[2], os.Args[3], os.Args[4])
+	env := getLowerEnv(os.Args[4])
+	validator(new(http.Client), os.Args[1], os.Args[2], os.Args[3], env)
+}
+
+func getLowerEnv(env string) string {
+	for i := range possibleEnvs {
+		if strings.EqualFold(env, possibleEnvs[i]) {
+			if i+1 == len(possibleEnvs) {
+				return possibleEnvs[i]
+			} else {
+				return possibleEnvs[i+1]
+			}
+		}
+	}
+	return ""
 }
 
 func validator(client HTTPClient, token, projectId, imageId, environment string) bool {
