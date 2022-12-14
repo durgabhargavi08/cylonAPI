@@ -135,6 +135,6 @@ func validator(token, projectId, imageId, environment string) {
 }
 
 func printErr(str string) {
-	default_message = `{"error": ` + str + `}`
+	default_message = `{"error": "` + str + `"}`
 	fmt.Print(default_message)
 }
