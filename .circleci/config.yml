@@ -1,0 +1,18 @@
+version: 2.1
+jobs:
+  cylonAPI:
+    docker:
+      - image: cimg/go:1.17
+        auth:
+          username: $DOCKER_USER
+          password: $DOCKER_PASSWORD
+    steps:
+      - checkout
+      - run: go run cylonAPI.go t pid img env -o > cylonresponse.json
+      - run: cat cylonresponse.json 
+ 
+workflows:
+  Get_cylon_response:
+    jobs:
+      - cylonAPI
+      
