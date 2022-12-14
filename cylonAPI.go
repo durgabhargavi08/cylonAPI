@@ -53,10 +53,10 @@ type Image struct {
 }
 
 type Output struct {
-	ImageTagFound string `json:"imageTagFound"`
+	ImageTagFound string `json:"-"`
 	MatchFound    bool   `json:"matchFound"`
-	ProjectId     string `json:"projectId"`
-	ProjectName   string `json:"projectName"`
+	ProjectId     string `json:"-"`
+	ProjectName   string `json:"-"`
 }
 
 // Arguements that are needed to pass:
