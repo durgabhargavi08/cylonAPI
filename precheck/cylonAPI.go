@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
@@ -18,6 +18,10 @@ const (
 	development = "development"
 	performace  = "performance"
 )
+
+type HTTPClient interface {
+	Do(req *http.Request) (*http.Response, error)
+}
 
 type Responsejson struct {
 	ID              string      `json:"id"`
@@ -49,10 +53,10 @@ type Image struct {
 }
 
 type Output struct {
-	imageTagFound string
-	matchFound    bool
-	projectId     string
-	projectName   string
+	ImageTagFound string `json:"-"`
+	MatchFound    bool   `json:"matchFound"`
+	ProjectId     string `json:"-"`
+	ProjectName   string `json:"-"`
 }
 
 // Arguements that are needed to pass:
@@ -66,75 +70,74 @@ func main() {
 		printErr("not enough arguements to make the call")
 		return
 	}
-	validator(os.Args[1], os.Args[2], os.Args[3], os.Args[4])
-	return
+	validator(new(http.Client), os.Args[1], os.Args[2], os.Args[3], os.Args[4])
 }
 
-func validator(token, projectId, imageId, environment string) {
+func validator(client HTTPClient, token, projectId, imageId, environment string) bool {
 
+	// move it config
 	endpoint := "https://cylon-api.cisco.com/middleware/api/project/" + projectId
 
-	client := new(http.Client)
 	request, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
 		printErr("error creating request (" + err.Error() + ")")
-		return
+		return false
 	}
 	request.Header.Add("Authorization", "Bearer "+token)
 	response, err := client.Do(request)
 	if err != nil {
 		printErr("error calling cylon (" + err.Error() + ")")
-		return
+		return false
 	}
 	if response.StatusCode != http.StatusOK {
 		printErr("project not found")
-		return
+		return false
 	}
 	defer response.Body.Close()
-	bytes, err := io.ReadAll(response.Body)
+	bytes, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		printErr("error occured in reading response (" + err.Error() + ")")
-		return
+		return false
 	}
 	object := new(Responsejson)
 	err = json.Unmarshal(bytes, object)
 	if err != nil {
 		printErr("error occured in unmarshalling the response (" + err.Error() + ")")
-		return
+		return false
 	}
-	output := new(Output)
-	output.projectId = projectId
-	output.projectName = object.ProjectName
+	output := Output{}
+	output.ProjectId = projectId
+	output.ProjectName = object.ProjectName
 
 	if strings.EqualFold(environment, production) {
-		output.imageTagFound = object.Production.Values.Image.Tag
+		output.ImageTagFound = object.Production.Values.Image.Tag
 	}
 	if strings.EqualFold(environment, development) {
-		output.imageTagFound = object.Development.Values.Image.Tag
+		output.ImageTagFound = object.Development.Values.Image.Tag
 	}
 	if strings.EqualFold(environment, performace) {
-		output.imageTagFound = object.Performance.Values.Image.Tag
+		output.ImageTagFound = object.Performance.Values.Image.Tag
 	}
 	if strings.EqualFold(environment, testinG) {
-		output.imageTagFound = object.Testing.Values.Image.Tag
+		output.ImageTagFound = object.Testing.Values.Image.Tag
 	}
 	if strings.EqualFold(environment, staging) {
-		output.imageTagFound = object.Staging.Values.Image.Tag
+		output.ImageTagFound = object.Staging.Values.Image.Tag
 	}
 
-	output.matchFound = output.imageTagFound == imageId
+	output.MatchFound = output.ImageTagFound == imageId
 
-	bytes, err = json.MarshalIndent(output, " ", "\t")
+	bytesOutput, err := json.MarshalIndent(output, " ", "\t")
 	if err != nil {
 		printErr("error occured in marshalling the output (" + err.Error() + ")")
-		return
+		return false
 	}
 
-	fmt.Print(string(bytes))
-	return
+	fmt.Print(string(bytesOutput))
+	return true
 }
 
 func printErr(str string) {
-	default_message = `{"error": ` + str + `}`
+	default_message = `{"error": "` + str + `"}`
 	fmt.Print(default_message)
 }

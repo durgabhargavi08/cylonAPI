@@ -1,0 +1,39 @@
+version: 2.1
+
+commands:
+  lint:
+   parameters:
+    token:
+      default: ''
+      type: string
+    projectid:
+      default: ''
+      type: string
+    imageid:
+      default: ''
+      type: string
+    environment:
+      default: ''
+      type: string
+   steps:
+   - checkout
+   - run:
+      name: "Cylon service run"
+      command: | 
+              go run cylonAPI.go << parameters.token >> << parameters.projectid >> << parameters.imageid >> << parameters.environment >> -o > cylonresponse.json
+              cat cylonresponse.json 
+ 
+jobs:
+  cylon-api-call:
+    docker:
+      - image: cimg/go:1.17
+        auth:
+          username: $DOCKER_USER
+          password: $DOCKER_PASSWORD
+    steps:
+      - lint
+       
+workflows:
+  Cylon API Response Validation:
+    jobs:
+      - cylon-api-call
