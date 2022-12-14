@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -19,6 +18,10 @@ const (
 	development = "development"
 	performace  = "performance"
 )
+
+type HTTPClient interface {
+	Do(req *http.Request) (*http.Response, error)
+}
 
 type Responsejson struct {
 	ID              string      `json:"id"`
@@ -67,43 +70,40 @@ func main() {
 		printErr("not enough arguements to make the call")
 		return
 	}
-	validator(os.Args[1], os.Args[2], os.Args[3], os.Args[4])
-	return
+	validator(new(http.Client), os.Args[1], os.Args[2], os.Args[3], os.Args[4])
 }
 
-func validator(token, projectId, imageId, environment string) {
+func validator(client HTTPClient, token, projectId, imageId, environment string) bool {
 
 	endpoint := "https://cylon-api.cisco.com/middleware/api/project/" + projectId
 
-	client := new(http.Client)
 	request, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
 		printErr("error creating request (" + err.Error() + ")")
-		return
+		return false
 	}
 	request.Header.Add("Authorization", "Bearer "+token)
 	response, err := client.Do(request)
 	if err != nil {
 		printErr("error calling cylon (" + err.Error() + ")")
-		return
+		return false
 	}
 	if response.StatusCode != http.StatusOK {
 		printErr("project not found")
-		return
+		return false
 	}
 	defer response.Body.Close()
 	bytes, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		printErr("error occured in reading response (" + err.Error() + ")")
-		return
+		return false
 	}
 	object := new(Responsejson)
 	err = json.Unmarshal(bytes, object)
 	if err != nil {
 		printErr("error occured in unmarshalling the response (" + err.Error() + ")")
-		return
+		return false
 	}
-	log.Println(object)
 	output := Output{}
 	output.ProjectId = projectId
 	output.ProjectName = object.ProjectName
@@ -129,11 +129,11 @@ func validator(token, projectId, imageId, environment string) {
 	bytesOutput, err := json.MarshalIndent(output, " ", "\t")
 	if err != nil {
 		printErr("error occured in marshalling the output (" + err.Error() + ")")
-		return
+		return false
 	}
 
 	fmt.Print(string(bytesOutput))
-	return
+	return true
 }
 
 func printErr(str string) {
