@@ -8,8 +8,11 @@ jobs:
           password: $DOCKER_PASSWORD
     steps:
       - checkout
-      - run: go run cylonAPI.go t pid img env -o > cylonresponse.json
-      - run: cat cylonresponse.json 
+      - run: 
+         name: "Cylon service run"
+         command: | 
+              go run cylonAPI.go t pid img env -o > cylonresponse.json
+              cat cylonresponse.json 
  
 workflows:
   Get_cylon_response:
