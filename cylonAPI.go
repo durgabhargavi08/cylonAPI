@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
@@ -91,7 +91,7 @@ func validator(token, projectId, imageId, environment string) {
 		return
 	}
 	defer response.Body.Close()
-	bytes, err := io.ReadAll(response.Body)
+	bytes, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		printErr("error occured in reading response (" + err.Error() + ")")
 		return
